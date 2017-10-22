@@ -25,10 +25,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    game.cpp \
+    square.cpp \
+    player.cpp \
+    piece.cpp \
+    move.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    game.h \
+    square.h \
+    player.h \
+    enum.h \
+    piece.h \
+    move.h
 
 FORMS += \
         mainwindow.ui
