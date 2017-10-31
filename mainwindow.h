@@ -5,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QGraphicsItem>
+#include "piece.h"
 
 namespace Ui {
 class MainWindow;
@@ -20,7 +21,8 @@ public:
 
 private:
     Ui::MainWindow *ui;
-
+    Piece *rect1;
+    Piece *rect2;
     QGraphicsScene *scene;
 };
 

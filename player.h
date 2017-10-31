@@ -9,7 +9,7 @@ class Player
 {
 public:
     Player();
-    std::vector<Move> getPossibleMoves;
+    std::vector<Move> getPossibleMoves();
 };
 
 #endif // PLAYER_H
