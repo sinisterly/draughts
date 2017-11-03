@@ -19,6 +19,8 @@ public:
     void loop();
     int moveLength();
     int moveLength(int pos);
+    void addEdge(int x,int y,int a,int b,int k);
+    void eraseEdge(int x,int y,int a,int b,int k);
 };
 
 #endif // GAME_H
