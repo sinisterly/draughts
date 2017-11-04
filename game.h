@@ -5,22 +5,22 @@
 #include "square.h"
 #include "enum.h"
 
-class Game
+class Game :public QGraphicsScene
 {
 private:
     Square *board[10][10];
     Player player1;
     Player player2;
     Color turn;
-    QGraphicsScene *scene;
 public:
-    Game(QGraphicsScene *scene);
+    Game();
     void newGame();
     void loop();
     int moveLength();
     int moveLength(int pos);
     void addEdge(int x,int y,int a,int b,int k);
     void eraseEdge(int x,int y,int a,int b,int k);
+    void getWhite();
 };
 
 #endif // GAME_H

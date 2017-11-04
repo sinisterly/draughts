@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "game.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -8,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    scene=new QGraphicsScene(this);
+    scene=new Game();
     ui->graphicsView->setScene(scene);
     /*
     rect1=new Piece();
@@ -23,8 +22,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QBrush redBrush(Qt::red);
     QPen outlinePen(Qt::black);
     */
-    Game game(scene);
-
 }
 
 MainWindow::~MainWindow()

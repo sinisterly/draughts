@@ -15,7 +15,6 @@ private:
 public:
     bool pressed;
     Piece();
-    Piece(PieceType type,Color color);
     void setPiece(PieceType type,Color color);
     QRectF boundingRect() const;
     void paint(QPainter *painter,const QStyleOptionGraphicsItem *option,QWidget *widget);

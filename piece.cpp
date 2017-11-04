@@ -1,21 +1,14 @@
 #include "piece.h"
 #include "square.h"
+#include "game.h"
 #include <QDebug>
 #include <QGraphicsView>
 #include <QGraphicsSceneMouseEvent>
 
-Piece::Piece(PieceType type,Color color)
-    :type(type),color(color)
-{
-    pressed=false;
-    setFlag(QGraphicsItem::ItemIsMovable);
-    setPos(5,5);
-}
-
 void Piece::setPiece(PieceType type, Color color)
 {
-    //this->type=type;
-    //this->color=color;
+    this->type=type;
+    this->color=color;
 }
 
 QRectF Piece::boundingRect() const
@@ -25,6 +18,8 @@ QRectF Piece::boundingRect() const
 
 void Piece::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    if(color==Color::NONE)
+        return;
     QRectF rect=boundingRect();
     QPen pen(Qt::black, 3);
 
@@ -49,6 +44,8 @@ void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event)
     parentItem()->setZValue(1);
     update();
     QGraphicsItem::mousePressEvent(event);
+    Game *game=dynamic_cast<Game*>(scene());
+    game->getWhite();
 }
 
 void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -68,8 +65,14 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     }
     int to=newParent->getIndex();
     qDebug() << from << ' ' << to;
+    Piece* piece2=newParent->getPiece();
+    piece2->setParentItem(parent);
     setParentItem(newParent);
+    parent->updatePiece();
+    newParent->updatePiece();
     setPos(5,5);
+
+
     //if(item->parentItem())
         //item=item->parentItem();
     //qDebug() << newParent << (mapToScene(event->pos()));

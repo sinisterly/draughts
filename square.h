@@ -15,14 +15,15 @@ private:
     Piece *piece;
 public:
     Square();
-    Square(QGraphicsScene *scene,int x,int y);
-    void addPiece(PieceType type,Color color);
+    Square(int x,int y);
     void removePiece();
     void setPiece(PieceType type,Color color);
     QRectF boundingRect() const;
     void paint(QPainter *painter,const QStyleOptionGraphicsItem *option,QWidget *widget);
     int getIndex();
-    Piece *getPiece();
+    Color getPieceColor();
+    Piece* getPiece();
+    void updatePiece();
 };
 
 #endif // SQUARE_H

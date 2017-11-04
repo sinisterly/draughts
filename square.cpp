@@ -1,16 +1,11 @@
 #include "square.h"
 #include <QDebug>
 
-Square::Square(QGraphicsScene *scene,int x,int y)
+Square::Square(int x,int y)
     :x(x),y(y)
 {
     setPos(50*y,50*x);
-    scene->addItem(this);
-}
-
-void Square::addPiece(PieceType type, Color color)
-{
-    piece=new Piece(type,color);
+    piece=new Piece();
     piece->setParentItem(this);
 }
 
@@ -46,9 +41,24 @@ int Square::getIndex()
     return 5*x+y/2+1;
 }
 
+Color Square::getPieceColor()
+{
+    return piece->getColor();
+}
+
 Piece *Square::getPiece()
 {
     return piece;
+}
+
+void Square::updatePiece()
+{
+    auto x=childItems();
+    if(x.empty()){
+        piece=nullptr;
+    }
+    else
+        piece=qgraphicsitem_cast<Piece*>(childItems()[0]);
 }
 
 Square::Square()

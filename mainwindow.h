@@ -6,6 +6,7 @@
 #include <QGraphicsView>
 #include <QGraphicsItem>
 #include "piece.h"
+#include "game.h"
 
 namespace Ui {
 class MainWindow;
@@ -23,7 +24,7 @@ private:
     Ui::MainWindow *ui;
     Piece *rect1;
     Piece *rect2;
-    QGraphicsScene *scene;
+    Game *scene;
 };
 
 #endif // MAINWINDOW_H
