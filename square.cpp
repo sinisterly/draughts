@@ -38,6 +38,7 @@ void Square::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 
 int Square::getIndex()
 {
+    if((x+y)%2==0) return -1;
     return 5*x+y/2+1;
 }
 

@@ -29,13 +29,20 @@ void Piece::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
         painter->setBrush(Qt::white);
     if(color==Color::BLACK)
         painter->setBrush(Qt::red);
-    painter->drawEllipse(rect);
-
+    if(type==PieceType::MAN)
+        painter->drawEllipse(rect);
+    if(type==PieceType::KING)
+        painter->drawRect(rect);
 }
 
 Color Piece::getColor()
 {
     return color;
+}
+
+PieceType Piece::getPieceType()
+{
+    return type;
 }
 
 void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -45,7 +52,7 @@ void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event)
     update();
     QGraphicsItem::mousePressEvent(event);
     Game *game=dynamic_cast<Game*>(scene());
-    game->getWhite();
+    //game->getWhite();
 }
 
 void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -54,7 +61,7 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     parent->setZValue(0);
     pressed=false;
     int from=parent->getIndex();
-    Square *newParent;
+    Square *newParent=nullptr;
     foreach(QGraphicsItem *item,scene()->items(mapToScene(event->pos()))){
         Square *node=qgraphicsitem_cast<Square*>(item);
         if(!node || node==qgraphicsitem_cast<Square*>(this))
@@ -63,13 +70,67 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         //setParentItem(node);
         //setPos(5,5);
     }
+    if(newParent==nullptr)
+    {
+        setPos(5,5);
+        return;
+    }
     int to=newParent->getIndex();
-    qDebug() << from << ' ' << to;
-    Piece* piece2=newParent->getPiece();
-    piece2->setParentItem(parent);
-    setParentItem(newParent);
-    parent->updatePiece();
-    newParent->updatePiece();
+    //qDebug() << from << ' ' << to;
+    Game *game=dynamic_cast<Game*>(scene());
+    if(!(game->isCapturing))
+    {
+        int length=game->moveLength();
+        if(length==0)
+        {
+            auto moves=game->normalMoves();
+            bool okMove=std::find(moves.begin(),moves.end(),std::make_pair(from,to))!=moves.end();
+            if(okMove)
+            {
+                Piece* piece2=newParent->getPiece();
+                piece2->setParentItem(parent);
+                setParentItem(newParent);
+                parent->updatePiece();
+                newParent->updatePiece();
+                game->changeTurn();
+                if((color==Color::WHITE && to<=5) || (color==Color::BLACK && to>=46))
+                    type=PieceType::KING;
+            }
+        }
+        else
+        {
+            game->totalCaptureLength=length;
+            game->currentCaptureLength=0;
+            game->isCapturing=true;
+        }
+    }
+    if(game->isCapturing)
+    {
+        auto moves=game->possibleMoves(game->totalCaptureLength);
+        auto it=std::find_if(moves[game->currentCaptureLength].begin(),moves[game->currentCaptureLength].end(),
+                [&](std::tuple<int,int,int> &x){return std::get<0>(x)==from && std::get<1>(x)==to;});
+        bool okMove=(it!=moves[game->currentCaptureLength].end());
+        if(okMove)
+        {
+            Piece* piece2=newParent->getPiece();
+            piece2->setParentItem(parent);
+            setParentItem(newParent);
+            parent->updatePiece();
+            newParent->updatePiece();
+            game->currentCaptureLength++;
+            game->capturedPieces.push_back(std::get<2>(*it));
+            if(game->totalCaptureLength==game->currentCaptureLength)
+            {
+                game->changeTurn();
+                game->isCapturing=false;
+                game->removeCapturedPieces();
+                if((color==Color::WHITE && to<=5) || (color==Color::BLACK && to>=46))
+                    type=PieceType::KING;
+            }
+        }
+    }
+    //qDebug() << okMove;
+
     setPos(5,5);
 
 
