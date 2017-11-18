@@ -1,22 +1,29 @@
 #include "square.h"
+#include "man.h"
+#include "king.h"
+#include "emptypiece.h"
 #include <QDebug>
 
 Square::Square(int x,int y)
-    :x(x),y(y)
 {
+    index=(x+y)%2 ? 5*x+y/2+1 : -1;
     setPos(50*y,50*x);
-    piece=new Piece();
+    piece=nullptr;
+}
+
+void Square::addPiece(PieceType type, Color color)
+{
+    if(piece)
+        delete piece;
+    if(type==PieceType::MAN)
+        piece=new Man(color);
+    else if(type==PieceType::KING)
+        piece=new King(color);
+    else
+        piece=new EmptyPiece(color);
     piece->setParentItem(this);
-}
-
-void Square::removePiece()
-{
-    //piece=nullptr;
-}
-
-void Square::setPiece(PieceType type, Color color)
-{
-    piece->setPiece(type,color);
+    piece->setFlag(QGraphicsItem::ItemIsMovable);
+    piece->setPos(5,5);
 }
 
 QRectF Square::boundingRect() const
@@ -29,7 +36,7 @@ void Square::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     QRectF rect=boundingRect();
     QPen pen(Qt::black, 3);
     painter->setPen(pen);
-    if((x+y)%2)
+    if(index!=-1)
        painter->setBrush(QBrush(Qt::black));
     else
         painter->setBrush(QBrush(Qt::white));
@@ -38,13 +45,7 @@ void Square::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 
 int Square::getIndex()
 {
-    if((x+y)%2==0) return -1;
-    return 5*x+y/2+1;
-}
-
-Color Square::getPieceColor()
-{
-    return piece->getColor();
+    return index;
 }
 
 Piece *Square::getPiece()
@@ -55,9 +56,8 @@ Piece *Square::getPiece()
 void Square::updatePiece()
 {
     auto x=childItems();
-    if(x.empty()){
+    if(x.empty())
         piece=nullptr;
-    }
     else
         piece=qgraphicsitem_cast<Piece*>(childItems()[0]);
 }

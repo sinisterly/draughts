@@ -22,8 +22,6 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    Piece *rect1;
-    Piece *rect2;
     Game *scene;
 };
 

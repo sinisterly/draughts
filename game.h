@@ -4,38 +4,35 @@
 #include "player.h"
 #include "square.h"
 #include "enum.h"
+#include <QGraphicsScene>
 
+class Square;
 class Game :public QGraphicsScene
 {
 private:
     Square *board[10][10];
-    int tab[51];
     Player player1;
     Player player2;
     Color turn;
+    class Proxy{
+    public:
+        Proxy(Square** array);
+        Square* operator[](int index);
+    private:
+        Square** array;
+    };
 public:
     Game();
+    Color getTurn();
     void newGame();
-    void loop();
     void changeTurn();
     int moveLength();
-    int moveLength(int pos,int depth=0);
-    int moveLength2(int pos,int depth=0);
+    void removeCapturedPieces();
     std::vector<std::vector<std::tuple<int,int,int>>> possibleMoves(int length);
     std::vector<std::pair<int,int>> normalMoves();
-    void addMove(std::vector<std::pair<int,int>> &v,int x,int y,int a,int b);
-    void addEdge(int x,int y,int a,int b);
-    void addEdge2(int x,int y,int a,int b);
-    void eraseEdge(int x,int y,int a,int b);
-    void eraseEdge2(int x,int y,int a,int b);
-    void getWhite();
-    bool isCapturing;
-    int totalCaptureLength;
-    int currentCaptureLength;
     std::vector<int> capturedPieces;
-    void removeCapturedPieces();
-    friend void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event);
-    friend void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    std::vector <std::tuple<int,int,int>> moves[20];
+    Proxy operator[](int index);
 };
 
 #endif // GAME_H

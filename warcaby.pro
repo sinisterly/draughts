@@ -30,7 +30,10 @@ SOURCES += \
     square.cpp \
     player.cpp \
     piece.cpp \
-    move.cpp
+    move.cpp \
+    man.cpp \
+    king.cpp \
+    emptypiece.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,7 +42,10 @@ HEADERS += \
     player.h \
     enum.h \
     piece.h \
-    move.h
+    move.h \
+    man.h \
+    king.h \
+    emptypiece.h
 
 FORMS += \
         mainwindow.ui

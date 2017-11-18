@@ -1,15 +1,10 @@
 #include "piece.h"
 #include "square.h"
-#include "game.h"
 #include <QDebug>
 #include <QGraphicsView>
 #include <QGraphicsSceneMouseEvent>
 
-void Piece::setPiece(PieceType type, Color color)
-{
-    this->type=type;
-    this->color=color;
-}
+int Piece::vis[51];
 
 QRectF Piece::boundingRect() const
 {
@@ -18,21 +13,14 @@ QRectF Piece::boundingRect() const
 
 void Piece::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if(color==Color::NONE)
-        return;
-    QRectF rect=boundingRect();
     QPen pen(Qt::black, 3);
-
     QBrush brush(Qt::red);
     painter->setPen(pen);
     if(color==Color::WHITE)
         painter->setBrush(Qt::white);
     if(color==Color::BLACK)
         painter->setBrush(Qt::red);
-    if(type==PieceType::MAN)
-        painter->drawEllipse(rect);
-    if(type==PieceType::KING)
-        painter->drawRect(rect);
+    paint(painter);
 }
 
 Color Piece::getColor()
@@ -40,26 +28,20 @@ Color Piece::getColor()
     return color;
 }
 
-PieceType Piece::getPieceType()
-{
-    return type;
-}
-
 void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    pressed=true;
     parentItem()->setZValue(1);
     update();
     QGraphicsItem::mousePressEvent(event);
-    Game *game=dynamic_cast<Game*>(scene());
-    //game->getWhite();
 }
 
 void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    static bool isCapturing;
+    static int totalCaptureLength;
+    static int currentCaptureLength;
     Square *parent=qgraphicsitem_cast<Square*>(parentItem());
     parent->setZValue(0);
-    pressed=false;
     int from=parent->getIndex();
     Square *newParent=nullptr;
     foreach(QGraphicsItem *item,scene()->items(mapToScene(event->pos()))){
@@ -67,8 +49,6 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         if(!node || node==qgraphicsitem_cast<Square*>(this))
             continue;
         newParent=node;
-        //setParentItem(node);
-        //setPos(5,5);
     }
     if(newParent==nullptr)
     {
@@ -76,9 +56,7 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         return;
     }
     int to=newParent->getIndex();
-    //qDebug() << from << ' ' << to;
-    Game *game=dynamic_cast<Game*>(scene());
-    if(!(game->isCapturing))
+    if(!(isCapturing))
     {
         int length=game->moveLength();
         if(length==0)
@@ -92,24 +70,26 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
                 setParentItem(newParent);
                 parent->updatePiece();
                 newParent->updatePiece();
-                game->changeTurn();
                 if((color==Color::WHITE && to<=5) || (color==Color::BLACK && to>=46))
-                    type=PieceType::KING;
+                {
+                    newParent->addPiece(PieceType::KING,color);
+                }
+                game->changeTurn();
             }
         }
         else
         {
-            game->totalCaptureLength=length;
-            game->currentCaptureLength=0;
-            game->isCapturing=true;
+            totalCaptureLength=length;
+            currentCaptureLength=0;
+            isCapturing=true;
         }
     }
-    if(game->isCapturing)
+    if(isCapturing)
     {
-        auto moves=game->possibleMoves(game->totalCaptureLength);
-        auto it=std::find_if(moves[game->currentCaptureLength].begin(),moves[game->currentCaptureLength].end(),
+        auto moves=game->possibleMoves(totalCaptureLength);
+        auto it=std::find_if(moves[currentCaptureLength].begin(),moves[currentCaptureLength].end(),
                 [&](std::tuple<int,int,int> &x){return std::get<0>(x)==from && std::get<1>(x)==to;});
-        bool okMove=(it!=moves[game->currentCaptureLength].end());
+        bool okMove=(it!=moves[currentCaptureLength].end());
         if(okMove)
         {
             Piece* piece2=newParent->getPiece();
@@ -117,35 +97,27 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
             setParentItem(newParent);
             parent->updatePiece();
             newParent->updatePiece();
-            game->currentCaptureLength++;
+            currentCaptureLength++;
             game->capturedPieces.push_back(std::get<2>(*it));
-            if(game->totalCaptureLength==game->currentCaptureLength)
+            if(totalCaptureLength==currentCaptureLength)
             {
-                game->changeTurn();
-                game->isCapturing=false;
+                isCapturing=false;
                 game->removeCapturedPieces();
                 if((color==Color::WHITE && to<=5) || (color==Color::BLACK && to>=46))
-                    type=PieceType::KING;
+                {
+                    newParent->addPiece(PieceType::KING,color);
+                }
+                game->changeTurn();
             }
         }
     }
-    //qDebug() << okMove;
-
     setPos(5,5);
-
-
-    //if(item->parentItem())
-        //item=item->parentItem();
-    //qDebug() << newParent << (mapToScene(event->pos()));
     update();
     QGraphicsItem::mouseReleaseEvent(event);
 }
 
-Piece::Piece()
+Piece::Piece(Color color)
+    :color(color)
 {
-    pressed=false;
-    setFlag(QGraphicsItem::ItemIsMovable);
-    setPos(5,5);
-    type=PieceType::NONE;
-    color=Color::NONE;
+
 }
