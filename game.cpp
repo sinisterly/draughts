@@ -1,30 +1,62 @@
 #include "game.h"
 #include "man.h"
 #include "king.h"
+#include <QGraphicsSceneMouseEvent>
+#include <QApplication>
+#include <sstream>
+
+Color Game::getColor() const
+{
+    return color;
+}
+
+void Game::setColor(const Color &value)
+{
+    color = value;
+}
 
 Game::Game()
 {
-    newGame();
+    //connect(tcpSocket, &QIODevice::readyRead, this, &Game::readMove);
+    //tcpSocket->connectToHost("127.0.0.1", 1050);
+    for(int i=0;i<10;i++)
+        for(int j=0;j<10;j++)
+            this->addItem(board[i][j]=new Square(i,j));
+    newGame(Color::WHITE);
 }
 
 Game* Piece::game;
 
-void Game::newGame()
+void Game::newGame(Color color)
 {
-    for(int i=0;i<10;i++)
-        for(int j=0;j<10;j++)
-            this->addItem(board[i][j]=new Square(i,j));
-    turn=Color::WHITE;
+    this->color=color;
+    turn=color;
     Piece::game=this;
     for(int i=0;i<=3;i++)
-        for(int j=i&1^1;j<10;j+=2)
+        for(int j=i%2^1;j<10;j+=2)
             board[i][j]->addPiece(PieceType::MAN,Color::BLACK);
     for(int i=4;i<=5;i++)
-        for(int j=i&1^1;j<10;j+=2)
+        for(int j=i%2^1;j<10;j+=2)
             board[i][j]->addPiece(PieceType::NONE,Color::NONE);
     for(int i=6;i<10;i++)
-        for(int j=i&1^1;j<10;j+=2)
+        for(int j=i%2^1;j<10;j+=2)
             board[i][j]->addPiece(PieceType::MAN,Color::WHITE);
+}
+
+void Game::startGame(Color color)
+{
+    newGame(color);
+    for(int i=6;i<10;i++)
+        for(int j=i%2^1;j<10;j+=2)
+            if(conn->getplayerPlace()!=0)
+                board[i][j]->getPiece()->setFlag(QGraphicsItem::ItemIsMovable);
+}
+
+void Game::endGame()
+{
+    for(int i=0;i<10;i++)
+        for(int j=i%2^1;j<10;j+=2)
+            board[i][j]->getPiece()->setFlag(QGraphicsItem::ItemIsMovable,false);
 }
 
 
@@ -33,7 +65,7 @@ void Game::removeCapturedPieces()
     for(auto i:capturedPieces)
     {
         int x=(i-1)/5;
-        int y=((i-1)%5)*2+(x&1^1);
+        int y=((i-1)%5)*2+(x%2^1);
         board[x][y]->addPiece(PieceType::NONE,Color::NONE);
     }
     capturedPieces.clear();
@@ -49,6 +81,81 @@ Game::Proxy Game::operator[](int index)
     return Proxy(board[index]);
 }
 
+void Game::sendMove(int from,int to)
+{
+    std::stringstream ss;
+    if(conn->getplayerPlace()==2)
+    {
+        from=51-from;
+        to=51-to;
+    }
+    ss << "ruch" << ' ' << from << ' ' << to << '\n';
+    std::string msg=ss.str();
+    conn->sendMove(msg);
+}
+
+void Game::makeMove(int from,int to)
+{
+    if(conn->getplayerPlace()==2)
+    {
+        from=51-from;
+        to=51-to;
+    }
+    QPointF fromPos;
+    QPointF toPos;
+    Piece *piece;
+    for(int i=0;i<10;i++)
+        for(int j=i%2^1;j<10;j+=2)
+            if(board[i][j]->getIndex()==from)
+            {
+                fromPos=board[i][j]->getPosition();
+                piece=board[i][j]->getPiece();
+            }
+            else if(board[i][j]->getIndex()==to)
+                toPos=board[i][j]->getPosition();
+    QGraphicsSceneMouseEvent pressEvent(QEvent::GraphicsSceneMousePress);
+    //175,320 - 225,270
+    piece->setFlag(QGraphicsItem::ItemIsMovable);
+    pressEvent.setScenePos(fromPos);
+    pressEvent.setButton(Qt::LeftButton);
+    pressEvent.setButtons(Qt::LeftButton);
+
+    QApplication::sendEvent(this, &pressEvent);
+    /*
+    QGraphicsSceneMouseEvent moveEvent(QEvent::GraphicsSceneMouseMove);
+    moveEvent.setButton(Qt::LeftButton);
+    moveEvent.setButtons(Qt::LeftButton);
+    double x=175,y=320;
+    int ile=1000000;
+    for(int i=0;i<ile;i++){
+        moveEvent.setScenePos(QPointF(x,y));
+        QApplication::sendEvent(scene, &moveEvent);
+        x+=50.0/ile;
+        y-=50.0/ile;
+    }
+    */
+    QGraphicsSceneMouseEvent releaseEvent(QEvent::GraphicsSceneMouseRelease);
+    releaseEvent.setScenePos(toPos);
+    releaseEvent.setButton(Qt::LeftButton);
+    releaseEvent.setButtons(Qt::LeftButton);
+    QApplication::sendEvent(this, &releaseEvent);
+    pressEvent.setButton(Qt::NoButton);
+    pressEvent.setButtons(Qt::NoButton);
+    QApplication::sendEvent(this, &pressEvent);
+    piece->setFlag(QGraphicsItem::ItemIsMovable,false);
+}
+
+void Game::setConnection(Connection *conn)
+{
+    this->conn=conn;
+}
+
+Connection *Game::getConnection()
+{
+    return conn;
+}
+
+
 int Game::moveLength()
 {
     for(int i=1;i<=50;i++)
@@ -59,12 +166,12 @@ int Game::moveLength()
     for(int i=0;i<20;i++)
         moves[i].clear();
     for(int i=0;i<10;i++)
-        for(int j=i&1^1;j<10;j+=2)
+        for(int j=i%2^1;j<10;j+=2)
             if(board[i][j]->getPiece()->getColor()==Color::NONE)
                     board[i][j]->getPiece()->addEdges(i,j);
     int length=0;
     for(int i=0;i<10;i++)
-        for(int j=i&1^1;j<10;j+=2)
+        for(int j=i%2^1;j<10;j+=2)
             if(board[i][j]->getPiece()->getColor()==turn)
             {
                 board[i][j]->getPiece()->addEdges(i,j);
@@ -79,7 +186,7 @@ std::vector<std::pair<int,int>> Game::normalMoves()
 {
     std::vector<std::pair<int,int>> v;
     for(int i=0;i<10;i++)
-        for(int j=i&1^1;j<10;j+=2)
+        for(int j=i%2^1;j<10;j+=2)
             if(board[i][j]->getPiece()->getColor()==turn)
                 board[i][j]->getPiece()->addMoves(v,i,j);
     return v;
@@ -114,3 +221,4 @@ Square *Game::Proxy::operator[](int index)
 {
     return array[index];
 }
+

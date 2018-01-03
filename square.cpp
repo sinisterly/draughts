@@ -7,6 +7,7 @@
 Square::Square(int x,int y)
 {
     index=(x+y)%2 ? 5*x+y/2+1 : -1;
+    position=QPointF(50*y+25,50*x+25);
     setPos(50*y,50*x);
     piece=nullptr;
 }
@@ -21,8 +22,8 @@ void Square::addPiece(PieceType type, Color color)
         piece=new King(color);
     else
         piece=new EmptyPiece(color);
-    piece->setParentItem(this);
     piece->setFlag(QGraphicsItem::ItemIsMovable);
+    piece->setParentItem(this);
     piece->setPos(5,5);
 }
 
@@ -31,7 +32,7 @@ QRectF Square::boundingRect() const
     return QRectF(0,0,50,50);
 }
 
-void Square::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void Square::paint(QPainter *painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
     QRectF rect=boundingRect();
     QPen pen(Qt::black, 3);
@@ -51,6 +52,11 @@ int Square::getIndex()
 Piece *Square::getPiece()
 {
     return piece;
+}
+
+QPointF Square::getPosition()
+{
+    return position;
 }
 
 void Square::updatePiece()

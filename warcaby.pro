@@ -5,6 +5,9 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT	 += network
+CONFIG += C++14
+CONFIG += warn_on
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -28,24 +31,25 @@ SOURCES += \
         mainwindow.cpp \
     game.cpp \
     square.cpp \
-    player.cpp \
     piece.cpp \
-    move.cpp \
     man.cpp \
     king.cpp \
-    emptypiece.cpp
+    emptypiece.cpp \
+    connection.cpp
 
 HEADERS += \
         mainwindow.h \
     game.h \
     square.h \
-    player.h \
     enum.h \
     piece.h \
-    move.h \
     man.h \
     king.h \
-    emptypiece.h
+    emptypiece.h \
+    connection.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    connection.ui
+
+

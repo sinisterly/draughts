@@ -1,19 +1,21 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "player.h"
 #include "square.h"
 #include "enum.h"
+#include "connection.h"
 #include <QGraphicsScene>
+#include <QtNetwork>
 
 class Square;
+class Connection;
 class Game :public QGraphicsScene
 {
 private:
+    Connection *conn;
     Square *board[10][10];
-    Player player1;
-    Player player2;
     Color turn;
+    Color color;
     class Proxy{
     public:
         Proxy(Square** array);
@@ -24,7 +26,9 @@ private:
 public:
     Game();
     Color getTurn();
-    void newGame();
+    void newGame(Color color);
+    void startGame(Color color);
+    void endGame();
     void changeTurn();
     int moveLength();
     void removeCapturedPieces();
@@ -33,6 +37,12 @@ public:
     std::vector<int> capturedPieces;
     std::vector <std::tuple<int,int,int>> moves[20];
     Proxy operator[](int index);
+    void sendMove(int from,int to);
+    void setConnection(Connection *conn);
+    Connection* getConnection();
+    void makeMove(int from,int to);
+    Color getColor() const;
+    void setColor(const Color &value);
 };
 
 #endif // GAME_H

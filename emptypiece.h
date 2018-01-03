@@ -8,10 +8,10 @@ class EmptyPiece : public Piece
 public:
     EmptyPiece(Color color);
     void addEdges(int x,int y) override;
-    void eraseEdges(int x,int y) override{return;}
-    void addMoves(std::vector<std::pair<int,int>> &v,int x,int y) override{return;}
-    int moveLength(int pos,int depth=0) override{return 0;}
-    void paint(QPainter *painter) override{return;}
+    void eraseEdges(int,int) override{return;}
+    void addMoves(std::vector<std::pair<int,int>>&,int,int) override{return;}
+    int moveLength(int,int) override{return 0;}
+    void paint(QPainter*) override{return;}
 };
 
 #endif // EMPTYPIECE_H

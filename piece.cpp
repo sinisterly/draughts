@@ -11,15 +11,15 @@ QRectF Piece::boundingRect() const
     return QRectF(0,0,40,40);
 }
 
-void Piece::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void Piece::paint(QPainter *painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
     QPen pen(Qt::black, 3);
     QBrush brush(Qt::red);
     painter->setPen(pen);
     if(color==Color::WHITE)
-        painter->setBrush(Qt::white);
+        painter->setBrush(game->getColor()==Color::WHITE ? Qt::white : Qt::red);
     if(color==Color::BLACK)
-        painter->setBrush(Qt::red);
+        painter->setBrush(game->getColor()==Color::WHITE ? Qt::red : Qt::white);
     paint(painter);
 }
 
@@ -30,6 +30,7 @@ Color Piece::getColor()
 
 void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    qInfo() << mapToScene(event->pos());
     parentItem()->setZValue(1);
     update();
     QGraphicsItem::mousePressEvent(event);
@@ -74,6 +75,8 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
                 {
                     newParent->addPiece(PieceType::KING,color);
                 }
+                if(game->getConnection()->getplayerPlace()!=0 && game->getTurn()==Color::WHITE)
+                    game->sendMove(from,to);
                 game->changeTurn();
             }
         }
@@ -99,6 +102,8 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
             newParent->updatePiece();
             currentCaptureLength++;
             game->capturedPieces.push_back(std::get<2>(*it));
+            if(game->getConnection()->getplayerPlace()!=0 && game->getTurn()==Color::WHITE)
+                game->sendMove(from,to);
             if(totalCaptureLength==currentCaptureLength)
             {
                 isCapturing=false;
@@ -109,10 +114,18 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
                 }
                 game->changeTurn();
             }
+
         }
     }
     setPos(5,5);
     update();
+
+    if(game->getConnection()->getplayerPlace()!=0 && game->getTurn()==Color::BLACK && !isCapturing && game->moveLength()==0 && game->normalMoves().size()==0)
+    {
+        game->getConnection()->getTcpSocket()->write("resign\n");
+    }
+
+
     QGraphicsItem::mouseReleaseEvent(event);
 }
 
