@@ -30,7 +30,8 @@ private slots:
     void on_quitButton_clicked();
     void displayError(QAbstractSocket::SocketError socketError);
     void readData();
-    void disconnect();
+    void connected();
+    void disconnected();
 
 private:
     Ui::Connection *ui;

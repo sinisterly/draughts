@@ -3,12 +3,15 @@
 #include <QMessageBox>
 #include <sstream>
 #include <cassert>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 
 Connection::Connection(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Connection),
     tcpSocket(new QTcpSocket(this)),
-    w(new MainWindow)
+    w(new MainWindow())
 {
     ui->setupUi(this);
     ui->table->setValidator(new QIntValidator(0, 199, this) );
@@ -16,7 +19,8 @@ Connection::Connection(QWidget *parent) :
     w->getGame()->setConnection(this);
     connect(tcpSocket, &QIODevice::readyRead, this, &Connection::readData);
     connect(tcpSocket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &Connection::displayError);
-    connect(tcpSocket, &QAbstractSocket::disconnected, this, &Connection::disconnect);
+    connect(tcpSocket, &QAbstractSocket::connected, this, &Connection::connected);
+    connect(tcpSocket, &QAbstractSocket::disconnected, this, &Connection::disconnected);
 }
 
 Connection::~Connection()
@@ -57,24 +61,13 @@ void Connection::sendMessage(std::string msg)
         int cnt=tcpSocket->write(msg.substr(sentBytes).c_str());
         sentBytes+=cnt;
     }
+    qInfo() << "wysylam: " << msg.c_str();
     assert(sentBytes==MSG_SIZE);
 }
 
 void Connection::on_connectButton_clicked()
 {
     tcpSocket->connectToHost(ui->ip->text(),ui->port->text().toInt());
-    if(tcpSocket->waitForConnected(1000))
-    {
-        nick=ui->nick->text().toStdString();
-        this->hide();
-        delete w;
-        w=new MainWindow();
-        w->getGame()->setConnection(this);
-        playerPlace=0;
-        w->show();
-        sendMessage(ui->table->text().toStdString());
-        sendMessage(nick);
-    }
 }
 
 void Connection::on_quitButton_clicked()
@@ -153,10 +146,12 @@ void Connection::readData()
         }
         if(type=="leave1")
         {
+            if(playerPlace==1) playerPlace=0;
             w->sitOnPlace1("Empty");
         }
         if(type=="leave2")
         {
+            if(playerPlace==2) playerPlace=0;
             w->sitOnPlace2("Empty");
         }
         if(type=="enableStart")
@@ -209,8 +204,35 @@ void Connection::readData()
     }
 }
 
-void Connection::disconnect()
+void Connection::connected()
 {
+    int enableKeepAlive = 1;
+    int fd = tcpSocket->socketDescriptor();
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &enableKeepAlive, sizeof(enableKeepAlive));
+    int maxIdle = 10; /* seconds */
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &maxIdle, sizeof(maxIdle));
+    int count = 3;  // send up to 3 keepalive packets out, then disconnect if no response
+    setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &count, sizeof(count));
+    int interval = 2;   // send a keepalive packet out every 2 seconds (after the 5 second idle period)
+    setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
+
+    qInfo() << "polaczono";
+    nick=ui->nick->text().toStdString();
+    w->enableDraw(false);
+    w->enableStart(false);
+    w->enableResign(false);
+    w->getGame()->newGame(Color::WHITE);
+    playerPlace=0;
+    this->hide();
+    w->show();
+    sendMessage(ui->table->text().toStdString());
+    sendMessage(nick);
+}
+
+void Connection::disconnected()
+{
+    w->hide();
+    this->show();
     qInfo() << "rozlaczono polaczenie";
 }
 

@@ -47,6 +47,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     Game *game;
+    void closeEvent (QCloseEvent *event);
 
 
 };

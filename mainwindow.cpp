@@ -60,38 +60,22 @@ void MainWindow::on_place1Button_clicked()
 {
     if(game->getConnection()->getplayerPlace()==0)
     {
-        //zapytaj serwer czy miejsce jest puste, jak tak to ustaw
-        //game->addplayerPlace1(game->getConnection()->getNick());
-
         game->getConnection()->sendMessage("sit1 " + game->getConnection()->getNick());
-
-
     }
     else if(game->getConnection()->getplayerPlace()==1)
     {
-        //game->eraseplayerPlace1();
-        game->getConnection()->setplayerPlace(0);
-        ui->place1Button->setText("Empty");
         game->getConnection()->sendMessage("leave1");
-        //wyslij do serwera, ze zwolnilo sie miejsce
     }
-    //game->addplayerPlace1(game->getConnection()->getNick());
-    //ui->playerPlace1->setText(QString::fromStdString(game->getplayerPlace1()->getNick()));
 }
 
 void MainWindow::on_place2Button_clicked()
 {
     if(game->getConnection()->getplayerPlace()==0)
     {
-        //game->addplayerPlace2(game->getConnection()->getNick());
         game->getConnection()->sendMessage("sit2 " + game->getConnection()->getNick());
-
     }
     else if(game->getConnection()->getplayerPlace()==2)
     {
-        //game->eraseplayerPlace2();
-        game->getConnection()->setplayerPlace(0);
-        ui->place2Button->setText("Empty");
         game->getConnection()->sendMessage("leave2");
     }
 }
@@ -121,4 +105,11 @@ void MainWindow::on_drawYes_clicked()
 void MainWindow::on_drawNo_clicked()
 {
     ui->drawOffer->hide();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    game->getConnection()->getTcpSocket()->disconnectFromHost();
+    game->getConnection()->show();
+    //MainWindow::closeEvent(event);
 }
