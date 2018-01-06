@@ -17,8 +17,6 @@ void Game::setColor(const Color &value)
 
 Game::Game()
 {
-    //connect(tcpSocket, &QIODevice::readyRead, this, &Game::readMove);
-    //tcpSocket->connectToHost("127.0.0.1", 1050);
     for(int i=0;i<10;i++)
         for(int j=0;j<10;j++)
             this->addItem(board[i][j]=new Square(i,j));
@@ -46,9 +44,9 @@ void Game::newGame(Color color)
 void Game::startGame(Color color)
 {
     newGame(color);
-    for(int i=6;i<10;i++)
+    for(int i=0;i<10;i++)
         for(int j=i%2^1;j<10;j+=2)
-            if(conn->getplayerPlace()!=0)
+            if(board[i][j]->getPiece()->getColor()==turn)
                 board[i][j]->getPiece()->setFlag(QGraphicsItem::ItemIsMovable);
 }
 
@@ -89,7 +87,7 @@ void Game::sendMove(int from,int to)
         from=51-from;
         to=51-to;
     }
-    ss << "ruch" << ' ' << from << ' ' << to << '\n';
+    ss << "ruch" << ' ' << from << ' ' << to;
     std::string msg=ss.str();
     conn->sendMove(msg);
 }
@@ -113,14 +111,15 @@ void Game::makeMove(int from,int to)
             }
             else if(board[i][j]->getIndex()==to)
                 toPos=board[i][j]->getPosition();
+
     QGraphicsSceneMouseEvent pressEvent(QEvent::GraphicsSceneMousePress);
     //175,320 - 225,270
     piece->setFlag(QGraphicsItem::ItemIsMovable);
     pressEvent.setScenePos(fromPos);
     pressEvent.setButton(Qt::LeftButton);
     pressEvent.setButtons(Qt::LeftButton);
-
     QApplication::sendEvent(this, &pressEvent);
+
     /*
     QGraphicsSceneMouseEvent moveEvent(QEvent::GraphicsSceneMouseMove);
     moveEvent.setButton(Qt::LeftButton);
@@ -208,6 +207,12 @@ std::vector<std::vector<std::tuple<int,int,int>>> Game::possibleMoves(int length
 void Game::changeTurn()
 {
     turn = turn==Color::WHITE ? Color::BLACK : Color::WHITE;
+    for(int i=0;i<10;i++)
+        for(int j=i%2^1;j<10;j+=2)
+            if(board[i][j]->getPiece()->getColor()==turn && turn==Color::WHITE)
+                board[i][j]->getPiece()->setFlag(QGraphicsItem::ItemIsMovable);
+            else
+                board[i][j]->getPiece()->setFlag(QGraphicsItem::ItemIsMovable,false);
 }
 
 

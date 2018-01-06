@@ -122,7 +122,7 @@ void Piece::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     if(game->getConnection()->getplayerPlace()!=0 && game->getTurn()==Color::BLACK && !isCapturing && game->moveLength()==0 && game->normalMoves().size()==0)
     {
-        game->getConnection()->getTcpSocket()->write("resign\n");
+        game->getConnection()->sendMessage("win");
     }
 
 

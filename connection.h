@@ -22,6 +22,7 @@ public:
     std::string getNick();
     int getplayerPlace();
     void setplayerPlace(int playerPlace);
+    void sendMessage(std::string msg);
 
 private slots:
 
@@ -29,6 +30,7 @@ private slots:
     void on_quitButton_clicked();
     void displayError(QAbstractSocket::SocketError socketError);
     void readData();
+    void disconnect();
 
 private:
     Ui::Connection *ui;

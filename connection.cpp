@@ -2,6 +2,7 @@
 #include "ui_connection.h"
 #include <QMessageBox>
 #include <sstream>
+#include <cassert>
 
 Connection::Connection(QWidget *parent) :
     QDialog(parent),
@@ -10,9 +11,12 @@ Connection::Connection(QWidget *parent) :
     w(new MainWindow)
 {
     ui->setupUi(this);
+    ui->table->setValidator(new QIntValidator(0, 199, this) );
+    ui->port->setValidator(new QIntValidator(0, 65535, this) );
     w->getGame()->setConnection(this);
     connect(tcpSocket, &QIODevice::readyRead, this, &Connection::readData);
     connect(tcpSocket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &Connection::displayError);
+    connect(tcpSocket, &QAbstractSocket::disconnected, this, &Connection::disconnect);
 }
 
 Connection::~Connection()
@@ -22,7 +26,7 @@ Connection::~Connection()
 
 void Connection::sendMove(std::string msg)
 {
-    tcpSocket->write(msg.c_str());
+    sendMessage(msg);
 }
 
 QTcpSocket *Connection::getTcpSocket()
@@ -40,6 +44,22 @@ void Connection::setplayerPlace(int playerPlace)
     this->playerPlace=playerPlace;
 }
 
+void Connection::sendMessage(std::string msg)
+{
+    while(msg.size()<MSG_SIZE)
+    {
+        msg+=' ';
+    }
+    assert(msg.size()==MSG_SIZE);
+    int sentBytes=0;
+    while(sentBytes<MSG_SIZE)
+    {
+        int cnt=tcpSocket->write(msg.substr(sentBytes).c_str());
+        sentBytes+=cnt;
+    }
+    assert(sentBytes==MSG_SIZE);
+}
+
 void Connection::on_connectButton_clicked()
 {
     tcpSocket->connectToHost(ui->ip->text(),ui->port->text().toInt());
@@ -47,9 +67,13 @@ void Connection::on_connectButton_clicked()
     {
         nick=ui->nick->text().toStdString();
         this->hide();
+        delete w;
+        w=new MainWindow();
+        w->getGame()->setConnection(this);
+        playerPlace=0;
         w->show();
-        tcpSocket->write((ui->table->text().toStdString() + '\n').c_str());
-        tcpSocket->write((nick + '\n').c_str());
+        sendMessage(ui->table->text().toStdString());
+        sendMessage(nick);
     }
 }
 
@@ -63,6 +87,11 @@ void Connection::displayError(QAbstractSocket::SocketError socketError)
 {
     switch (socketError) {
         case QAbstractSocket::RemoteHostClosedError:
+        QMessageBox::information(this, tr("Draughts"),
+                                 tr("The server is closed"
+                                    "Please check if server is running"));
+            w->hide();
+            this->show();
             break;
         case QAbstractSocket::HostNotFoundError:
             QMessageBox::information(this, tr("Draughts"),
@@ -85,9 +114,10 @@ void Connection::displayError(QAbstractSocket::SocketError socketError)
 
 void Connection::readData()
 {
-    char buf[100];
-    while(tcpSocket->readLine(buf,100)>0)
+    while(tcpSocket->canReadLine())
     {
+        char buf[100];
+        tcpSocket->readLine(buf,100);
         std::string msg(buf);
         qInfo() << msg.c_str();
         std::stringstream ss(msg);
@@ -175,7 +205,13 @@ void Connection::readData()
             msgBox.exec();
             w->getGame()->endGame();
         }
+
     }
+}
+
+void Connection::disconnect()
+{
+    qInfo() << "rozlaczono polaczenie";
 }
 
 int Connection::getplayerPlace()

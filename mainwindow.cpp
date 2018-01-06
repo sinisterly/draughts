@@ -63,7 +63,7 @@ void MainWindow::on_place1Button_clicked()
         //zapytaj serwer czy miejsce jest puste, jak tak to ustaw
         //game->addplayerPlace1(game->getConnection()->getNick());
 
-        game->getConnection()->getTcpSocket()->write(("sit1 " + game->getConnection()->getNick() + '\n').c_str());
+        game->getConnection()->sendMessage("sit1 " + game->getConnection()->getNick());
 
 
     }
@@ -72,7 +72,7 @@ void MainWindow::on_place1Button_clicked()
         //game->eraseplayerPlace1();
         game->getConnection()->setplayerPlace(0);
         ui->place1Button->setText("Empty");
-        game->getConnection()->getTcpSocket()->write("leave1\n");
+        game->getConnection()->sendMessage("leave1");
         //wyslij do serwera, ze zwolnilo sie miejsce
     }
     //game->addplayerPlace1(game->getConnection()->getNick());
@@ -84,7 +84,7 @@ void MainWindow::on_place2Button_clicked()
     if(game->getConnection()->getplayerPlace()==0)
     {
         //game->addplayerPlace2(game->getConnection()->getNick());
-        game->getConnection()->getTcpSocket()->write(("sit2 " + game->getConnection()->getNick() + '\n').c_str());
+        game->getConnection()->sendMessage("sit2 " + game->getConnection()->getNick());
 
     }
     else if(game->getConnection()->getplayerPlace()==2)
@@ -92,30 +92,30 @@ void MainWindow::on_place2Button_clicked()
         //game->eraseplayerPlace2();
         game->getConnection()->setplayerPlace(0);
         ui->place2Button->setText("Empty");
-        game->getConnection()->getTcpSocket()->write("leave2\n");
+        game->getConnection()->sendMessage("leave2");
     }
 }
 
 void MainWindow::on_startButton_clicked()
 {
-    game->getConnection()->getTcpSocket()->write("start\n");
+    game->getConnection()->sendMessage("start");
 }
 
 void MainWindow::on_drawButton_clicked()
 {
-    game->getConnection()->getTcpSocket()->write("drawOffer\n");
+    game->getConnection()->sendMessage("drawOffer");
 
 }
 
 void MainWindow::on_resignButton_clicked()
 {
-    game->getConnection()->getTcpSocket()->write("resign\n");
+    game->getConnection()->sendMessage("resign");
 }
 
 void MainWindow::on_drawYes_clicked()
 {
     ui->drawOffer->hide();
-    game->getConnection()->getTcpSocket()->write("drawYes\n");
+    game->getConnection()->sendMessage("drawYes");
 }
 
 void MainWindow::on_drawNo_clicked()
