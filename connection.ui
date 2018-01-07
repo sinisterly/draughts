@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Warcaby</string>
   </property>
   <widget class="QLineEdit" name="ip">
    <property name="geometry">
@@ -135,6 +135,14 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>ip</tabstop>
+  <tabstop>port</tabstop>
+  <tabstop>nick</tabstop>
+  <tabstop>table</tabstop>
+  <tabstop>connectButton</tabstop>
+  <tabstop>quitButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

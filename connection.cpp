@@ -14,9 +14,13 @@ Connection::Connection(QWidget *parent) :
     w(new MainWindow())
 {
     ui->setupUi(this);
-    ui->table->setValidator(new QIntValidator(0, 199, this) );
-    ui->port->setValidator(new QIntValidator(0, 65535, this) );
+    ui->connectButton->setEnabled(false);
+    ui->table->setValidator(new QIntValidator(0, 199, this));
+    ui->port->setValidator(new QIntValidator(0, 65535, this));
+    ui->nick->setValidator(new QRegExpValidator(QRegExp("[A-Za-z0-9]*"), this));
     w->getGame()->setConnection(this);
+    connect(ui->nick, &QLineEdit::textChanged, this, &Connection::enableConnectButton);
+    connect(ui->table, &QLineEdit::textChanged, this, &Connection::enableConnectButton);
     connect(tcpSocket, &QIODevice::readyRead, this, &Connection::readData);
     connect(tcpSocket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &Connection::displayError);
     connect(tcpSocket, &QAbstractSocket::connected, this, &Connection::connected);
@@ -41,11 +45,6 @@ QTcpSocket *Connection::getTcpSocket()
 std::string Connection::getNick()
 {
     return nick;
-}
-
-void Connection::setplayerPlace(int playerPlace)
-{
-    this->playerPlace=playerPlace;
 }
 
 void Connection::sendMessage(std::string msg)
@@ -76,32 +75,42 @@ void Connection::on_quitButton_clicked()
     this->close();
 }
 
+void Connection::enableConnectButton()
+{
+    if(!ui->table->text().isEmpty() && !ui->nick->text().isEmpty())
+    {
+        ui->connectButton->setEnabled(true);
+    }
+    else
+    {
+        ui->connectButton->setEnabled(false);
+    }
+}
+
 void Connection::displayError(QAbstractSocket::SocketError socketError)
 {
     switch (socketError) {
-        case QAbstractSocket::RemoteHostClosedError:
+    case QAbstractSocket::RemoteHostClosedError:
         QMessageBox::information(this, tr("Draughts"),
-                                 tr("The server is closed"
+                                 tr("The server is closed. "
                                     "Please check if server is running"));
-            w->hide();
-            this->show();
-            break;
-        case QAbstractSocket::HostNotFoundError:
-            QMessageBox::information(this, tr("Draughts"),
-                                     tr("The host was not found. Please check the "
-                                        "host name and port settings."));
-            break;
-        case QAbstractSocket::ConnectionRefusedError:
-            QMessageBox::information(this, tr("Draughts"),
-                                     tr("The connection was refused by the peer. "
-                                        "Make sure the server is running, "
-                                        "and check that the host name and port "
-                                        "settings are correct."));
-            break;
-        default:
-            QMessageBox::information(this, tr("Draughts"),
-                                     tr("The following error occurred: %1.")
-                                     .arg(tcpSocket->errorString()));
+        break;
+    case QAbstractSocket::HostNotFoundError:
+        QMessageBox::information(this, tr("Draughts"),
+                                 tr("The host was not found. Please check the "
+                                    "host name and port settings."));
+        break;
+    case QAbstractSocket::ConnectionRefusedError:
+        QMessageBox::information(this, tr("Draughts"),
+                                 tr("The connection was refused by the peer. "
+                                    "Make sure the server is running, "
+                                    "and check that the host name and port "
+                                    "settings are correct."));
+        break;
+    default:
+        QMessageBox::information(this, tr("Draughts"),
+                                 tr("The following error occurred: %1.")
+                                 .arg(tcpSocket->errorString()));
     }
 }
 
@@ -112,7 +121,7 @@ void Connection::readData()
         char buf[100];
         tcpSocket->readLine(buf,100);
         std::string msg(buf);
-        qInfo() << msg.c_str();
+        qInfo() << "otrzymuje: " << msg.c_str();
         std::stringstream ss(msg);
         std::string type;
         ss >> type;
@@ -174,20 +183,20 @@ void Connection::readData()
         }
         if(type=="drawOffer")
         {
-            w->showDrawOffer();
+            w->showDrawOffer(true);
 
         }
         if(type=="end")
         {
             int result;
             ss >> result;
-            qInfo() << "result: " << result;
             QMessageBox msgBox;
             if(playerPlace!=0)
             {
                 w->enableStart(true);
                 w->enableDraw(false);
                 w->enableResign(false);
+                w->showDrawOffer(false);
             }
             if(result==1)
             {
@@ -221,6 +230,7 @@ void Connection::connected()
     w->enableDraw(false);
     w->enableStart(false);
     w->enableResign(false);
+    w->showDrawOffer(false);
     w->getGame()->newGame(Color::WHITE);
     playerPlace=0;
     this->hide();

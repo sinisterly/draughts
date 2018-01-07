@@ -2,8 +2,6 @@
 
 std::vector<std::pair<int,int>> King::g[51];
 
-
-
 King::King(Color color)
     :Piece(color)
 {

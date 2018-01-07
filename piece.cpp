@@ -30,7 +30,6 @@ Color Piece::getColor()
 
 void Piece::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    qInfo() << mapToScene(event->pos());
     parentItem()->setZValue(1);
     update();
     QGraphicsItem::mousePressEvent(event);

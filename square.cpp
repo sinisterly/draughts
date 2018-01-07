@@ -22,7 +22,6 @@ void Square::addPiece(PieceType type, Color color)
         piece=new King(color);
     else
         piece=new EmptyPiece(color);
-    //piece->setFlag(QGraphicsItem::ItemIsMovable);
     piece->setParentItem(this);
     piece->setPos(5,5);
 }

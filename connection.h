@@ -21,13 +21,12 @@ public:
     QTcpSocket* getTcpSocket();
     std::string getNick();
     int getplayerPlace();
-    void setplayerPlace(int playerPlace);
     void sendMessage(std::string msg);
 
 private slots:
-
     void on_connectButton_clicked();
     void on_quitButton_clicked();
+    void enableConnectButton();
     void displayError(QAbstractSocket::SocketError socketError);
     void readData();
     void connected();

@@ -51,9 +51,16 @@ void MainWindow::enableResign(bool enable)
     ui->resignButton->setEnabled(enable);
 }
 
-void MainWindow::showDrawOffer()
+void MainWindow::showDrawOffer(bool show)
 {
-    ui->drawOffer->show();
+    if(show==true)
+    {
+        ui->drawOffer->show();
+    }
+    else
+    {
+        ui->drawOffer->hide();
+    }
 }
 
 void MainWindow::on_place1Button_clicked()
@@ -107,9 +114,8 @@ void MainWindow::on_drawNo_clicked()
     ui->drawOffer->hide();
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(QCloseEvent *)
 {
     game->getConnection()->getTcpSocket()->disconnectFromHost();
     game->getConnection()->show();
-    //MainWindow::closeEvent(event);
 }

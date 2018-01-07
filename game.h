@@ -38,9 +38,9 @@ public:
     std::vector <std::tuple<int,int,int>> moves[20];
     Proxy operator[](int index);
     void sendMove(int from,int to);
+    void makeMove(int from,int to);
     void setConnection(Connection *conn);
     Connection* getConnection();
-    void makeMove(int from,int to);
     Color getColor() const;
     void setColor(const Color &value);
 };

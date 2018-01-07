@@ -46,7 +46,7 @@ void Game::startGame(Color color)
     newGame(color);
     for(int i=0;i<10;i++)
         for(int j=i%2^1;j<10;j+=2)
-            if(board[i][j]->getPiece()->getColor()==turn)
+            if(conn->getplayerPlace()!=0 && board[i][j]->getPiece()->getColor()==turn)
                 board[i][j]->getPiece()->setFlag(QGraphicsItem::ItemIsMovable);
 }
 
@@ -101,7 +101,7 @@ void Game::makeMove(int from,int to)
     }
     QPointF fromPos;
     QPointF toPos;
-    Piece *piece;
+    Piece *piece=nullptr;
     for(int i=0;i<10;i++)
         for(int j=i%2^1;j<10;j+=2)
             if(board[i][j]->getIndex()==from)
@@ -113,26 +113,12 @@ void Game::makeMove(int from,int to)
                 toPos=board[i][j]->getPosition();
 
     QGraphicsSceneMouseEvent pressEvent(QEvent::GraphicsSceneMousePress);
-    //175,320 - 225,270
     piece->setFlag(QGraphicsItem::ItemIsMovable);
     pressEvent.setScenePos(fromPos);
     pressEvent.setButton(Qt::LeftButton);
     pressEvent.setButtons(Qt::LeftButton);
     QApplication::sendEvent(this, &pressEvent);
 
-    /*
-    QGraphicsSceneMouseEvent moveEvent(QEvent::GraphicsSceneMouseMove);
-    moveEvent.setButton(Qt::LeftButton);
-    moveEvent.setButtons(Qt::LeftButton);
-    double x=175,y=320;
-    int ile=1000000;
-    for(int i=0;i<ile;i++){
-        moveEvent.setScenePos(QPointF(x,y));
-        QApplication::sendEvent(scene, &moveEvent);
-        x+=50.0/ile;
-        y-=50.0/ile;
-    }
-    */
     QGraphicsSceneMouseEvent releaseEvent(QEvent::GraphicsSceneMouseRelease);
     releaseEvent.setScenePos(toPos);
     releaseEvent.setButton(Qt::LeftButton);
@@ -207,6 +193,7 @@ std::vector<std::vector<std::tuple<int,int,int>>> Game::possibleMoves(int length
 void Game::changeTurn()
 {
     turn = turn==Color::WHITE ? Color::BLACK : Color::WHITE;
+    if(conn->getplayerPlace()==0) return;
     for(int i=0;i<10;i++)
         for(int j=i%2^1;j<10;j+=2)
             if(board[i][j]->getPiece()->getColor()==turn && turn==Color::WHITE)

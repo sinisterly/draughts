@@ -3,8 +3,6 @@
 
 std::vector<std::pair<int,int>> Man::g[51];
 
-
-
 Man::Man(Color color)
     :Piece(color)
 {

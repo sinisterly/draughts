@@ -13,7 +13,6 @@
 #include <sstream>
 #include <netinet/tcp.h>
 
-
 constexpr int MSG_SIZE=20;
 
 struct threadData
@@ -31,6 +30,12 @@ struct Player{
 	int id=0;
 	std::queue<std::string> commands;
 	pthread_mutex_t queueMutex = PTHREAD_MUTEX_INITIALIZER;
+	void addMessage(std::string msg)
+	{
+		pthread_mutex_lock(&queueMutex);
+		commands.push(msg);
+		pthread_mutex_unlock(&queueMutex);
+	}
 };
 
 struct Place{
@@ -42,8 +47,6 @@ struct Game{
 	std::vector <Player> players;
 	Place places[2];
 	bool started=false;
-	//std::string place1="Empty";
-	//std::string place2="Empty";
 	Game(){
 		players.push_back(Player());
 	}
@@ -59,10 +62,7 @@ struct Game{
 		for(auto &p:players){
 			if(p.id==0 && msg.substr(0,4)!="ruch") continue;
 			if(p.fd!=fd || toMe){
-				pthread_mutex_lock(&p.queueMutex);
-				p.commands.push(msg);
-				std::cout << "dodano wiadomosc na kolejke: " << std::endl;
-				pthread_mutex_unlock(&p.queueMutex);
+				p.addMessage(msg);
 			}
 		}
 	}
@@ -94,30 +94,30 @@ std::string readMessage(threadData *data){
 	while(readBytes<MSG_SIZE)
 	{
 		int cnt=read(data->fd,buf,MSG_SIZE-readBytes);
-		//std::cout << "przeczytano: " << cnt << "aktualna wiadomosc: " << msg << std::endl;
 		if(cnt>0)
 		{
 			msg+=std::string(buf,cnt);
 			readBytes+=cnt;
 		}
-		else if(cnt==0)
+		else if(cnt==0) //klient się rozłączył, należy poddać grę jeśli był graczem i zwolnić jego zasoby(wątki i deskryptor)
 		{
 			int place=game.players[data->playerId].place;
 			if(place!=0)
 			{
 				game.places[place-1]=Place();
 				game.addMessage("leave"+std::to_string(place)+'\n',data->fd);
+				game.players[game.places[0].playerId].addMessage("disableStart\n");
+				game.players[game.places[1].playerId].addMessage("disableStart\n");
 				if(game.started==true)
 				{
 					game.started=false;
 					game.addMessage("end "+std::to_string(place==1 ? 0 : 2)+'\n',data->fd);
-					game.players[game.places[0].playerId].commands.push("disableStart\n");
-					game.players[game.places[1].playerId].commands.push("disableStart\n");
 					game.players[0].commands=std::queue<std::string>();
 				}
 			}
 			close(data->fd);
 			std::cout << "rozlaczono klienta" << std::endl;
+			std::cout << "zamykamy watek czytajacy gracza o fd = " << data->fd << std::endl;
 			data->fd=-1;
 			pthread_exit(NULL);
 		}
@@ -127,7 +127,7 @@ std::string readMessage(threadData *data){
 		}
 		
 	}
-	std::cout << "odczytano wiadomosc: " << msg << std::endl;
+	std::cout << "odczytano wiadomosc od gracza o fd = " << data->fd << ": " << msg << std::endl;
 	return msg;
 }
 
@@ -144,7 +144,7 @@ void sendMessage(int fd,std::string msg)
 		}
 		sentBytes+=cnt;
 	}
-	std::cout << "wyslano wiadomosc: " << msg << std::endl;
+	std::cout << "wyslano wiadomosc do gracza o fd = " << fd << ": " << msg << std::endl;
 }
 
 void *readingThread(void *t_data)
@@ -154,39 +154,37 @@ void *readingThread(void *t_data)
 	Game &game=games[data->gameId];
 	while(1){
 		std::string msg=readMessage(data);
-		//dodac assert msg.size()==20
 		msg+='\n';
-		//std::cout << "info: " << msg << std::endl;
 		if(msg.substr(0,4)=="sit1" && game.places[0].playerId==0)
 		{
 			game.places[0].playerId=data->playerId;
 			game.players[data->playerId].place=1;
-			game.players[data->playerId].commands.push("sit1ok\n");
+			game.players[data->playerId].addMessage("sit1ok\n");
 			game.addMessage(msg,data->fd);
 			if(game.places[1].playerId!=0)
 			{
-				game.players[game.places[0].playerId].commands.push("enableStart\n");
-				game.players[game.places[1].playerId].commands.push("enableStart\n");
+				game.players[game.places[0].playerId].addMessage("enableStart\n");
+				game.players[game.places[1].playerId].addMessage("enableStart\n");
 			}
 		}
 		if(msg.substr(0,4)=="sit2" && game.places[1].playerId==0)
 		{
 			game.places[1].playerId=data->playerId;
 			game.players[data->playerId].place=2;
-			game.players[data->playerId].commands.push("sit2ok\n");
+			game.players[data->playerId].addMessage("sit2ok\n");
 			game.addMessage(msg,data->fd);
 			if(game.places[0].playerId!=0)
 			{
-				game.players[game.places[0].playerId].commands.push("enableStart\n");
-				game.players[game.places[1].playerId].commands.push("enableStart\n");
+				game.players[game.places[0].playerId].addMessage("enableStart\n");
+				game.players[game.places[1].playerId].addMessage("enableStart\n");
 			}
 		}
 		if(msg.substr(0,6)=="leave1" && game.started==false)
 		{
 			if(game.places[1].playerId!=0)
 			{
-				game.players[game.places[0].playerId].commands.push("disableStart\n");
-				game.players[game.places[1].playerId].commands.push("disableStart\n");
+				game.players[game.places[0].playerId].addMessage("disableStart\n");
+				game.players[game.places[1].playerId].addMessage("disableStart\n");
 			}
 			game.places[0].playerId=0;
 			game.places[0].ready=false;
@@ -196,8 +194,8 @@ void *readingThread(void *t_data)
 		{
 			if(game.places[0].playerId!=0)
 			{
-				game.players[game.places[0].playerId].commands.push("disableStart\n");
-				game.players[game.places[1].playerId].commands.push("disableStart\n");
+				game.players[game.places[0].playerId].addMessage("disableStart\n");
+				game.players[game.places[1].playerId].addMessage("disableStart\n");
 			}
 			game.places[1].playerId=0;
 			game.places[1].ready=false;
@@ -221,7 +219,7 @@ void *readingThread(void *t_data)
 		if(msg.substr(0,9)=="drawOffer")
 		{
 			int opponentId=game.places[0].playerId==data->playerId ? game.places[1].playerId : game.places[0].playerId;
-			game.players[opponentId].commands.push("drawOffer\n");
+			game.players[opponentId].addMessage("drawOffer\n");
 		}
 		if(msg.substr(0,7)=="drawYes")
 		{
@@ -243,10 +241,6 @@ void *readingThread(void *t_data)
 			int place1Score=game.places[0].playerId==data->playerId ? 2 : 0;
 			game.addMessage("end "+std::to_string(place1Score)+'\n',data->fd,true);
 		}
-			
-		
-		//std::cout << "Wiadomosc: " << msg << std::endl;
-		//game.addMessage(msg,data->fd);
 	}
 	
 }
@@ -273,12 +267,13 @@ void *writingThread(void *t_data)
 		q.pop();
 		sendMessage(data->fd,msg);
 	}
+	int fd=data->fd;
 	while(data->fd!=-1){
 		std::string msg=game.getMessage(data->playerId);
 		if(msg=="") continue;
 		sendMessage(data->fd,msg);
 	}
-	std::cout << "zamykamy watek wysylajacy" << std::endl;
+	std::cout << "zamykamy watek wysylajacy gracza o fd = " << fd << std::endl;
 	pthread_exit(NULL);
 }
 
@@ -290,7 +285,6 @@ void handleConnection(int userFd)
 	data->gameId=std::stoi(readMessage(data));
 	data->nick=readMessage(data);
 
-	//std::cout << "table: " << data->gameId << std::endl;
 	data->playerId=games[data->gameId].addPlayer(userFd,data->nick);
 	pthread_t thread1;
 	int rTh=pthread_create(&thread1,NULL,readingThread,data);
@@ -324,22 +318,18 @@ int main(){
 	{
 		int userFd=accept(serverFd,NULL,NULL);
 		if(userFd<0) errorInfo("Blad przy wywolaniu funkcji accept: ");
-		
+
+		//poniższe ustawienia pozwolają wykryć stracone połączenie klienta z internetem np. po odłączeniu kabla po 10 sekundach zamiast domyślnych na systemach Linux 2 godzinach
 		int enableKeepAlive = 1;
 		setsockopt(userFd, SOL_SOCKET, SO_KEEPALIVE, &enableKeepAlive, sizeof(enableKeepAlive));
-
 		int maxIdle = 10; // seconds 
 		setsockopt(userFd, IPPROTO_TCP, TCP_KEEPIDLE, &maxIdle, sizeof(maxIdle));
-
 		int count = 3;  // send up to 3 keepalive packets out, then disconnect if no response
 		setsockopt(userFd, SOL_TCP, TCP_KEEPCNT, &count, sizeof(count));
-
 		int interval = 2;   // send a keepalive packet out every 2 seconds (after the 5 second idle period)
 		setsockopt(userFd, SOL_TCP, TCP_KEEPINTVL, &interval, sizeof(interval));
 		
-		std::cout << userFd << std::endl;
 		handleConnection(userFd);
-		
 	}
 	
 	close(serverFd);
