@@ -17,7 +17,7 @@ class Connection : public QDialog
 public:
     explicit Connection(QWidget *parent = 0);
     ~Connection();
-    void sendMove(std::string msg);
+    void sendMove(const std::string &msg);
     QTcpSocket* getTcpSocket();
     std::string getNick();
     int getplayerPlace();

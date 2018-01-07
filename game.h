@@ -18,7 +18,7 @@ private:
     Color color;
     class Proxy{
     public:
-        Proxy(Square** array);
+        explicit Proxy(Square** array);
         Square* operator[](int index);
     private:
         Square** array;
@@ -42,7 +42,6 @@ public:
     void setConnection(Connection *conn);
     Connection* getConnection();
     Color getColor() const;
-    void setColor(const Color &value);
 };
 
 #endif // GAME_H

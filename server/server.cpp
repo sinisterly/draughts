@@ -30,7 +30,7 @@ struct Player{
 	int id=0;
 	std::queue<std::string> commands;
 	pthread_mutex_t queueMutex = PTHREAD_MUTEX_INITIALIZER;
-	void addMessage(std::string msg)
+	void addMessage(const std::string &msg)
 	{
 		pthread_mutex_lock(&queueMutex);
 		commands.push(msg);
@@ -50,7 +50,7 @@ struct Game{
 	Game(){
 		players.push_back(Player());
 	}
-	int addPlayer(int fd,std::string &nick){
+	int addPlayer(int fd,const std::string &nick){
 		Player p;
 		p.fd=fd;
 		p.nick=nick;
@@ -58,7 +58,7 @@ struct Game{
 		players.push_back(p);
 		return p.id;
 	}
-	void addMessage(std::string msg,int fd,bool toMe=false){
+	void addMessage(const std::string &msg,int fd,bool toMe=false){
 		for(auto &p:players){
 			if(p.id==0 && msg.substr(0,4)!="ruch") continue;
 			if(p.fd!=fd || toMe){
@@ -105,15 +105,17 @@ std::string readMessage(threadData *data){
 			if(place!=0)
 			{
 				game.places[place-1]=Place();
-				game.addMessage("leave"+std::to_string(place)+'\n',data->fd);
-				game.players[game.places[0].playerId].addMessage("disableStart\n");
-				game.players[game.places[1].playerId].addMessage("disableStart\n");
 				if(game.started==true)
 				{
 					game.started=false;
 					game.addMessage("end "+std::to_string(place==1 ? 0 : 2)+'\n',data->fd);
+					pthread_mutex_lock(&game.players[0].queueMutex);
 					game.players[0].commands=std::queue<std::string>();
+					pthread_mutex_unlock(&game.players[0].queueMutex);
 				}
+				game.addMessage("leave"+std::to_string(place)+'\n',data->fd);
+				game.players[game.places[0].playerId].addMessage("disableStart\n");
+				game.players[game.places[1].playerId].addMessage("disableStart\n");
 			}
 			close(data->fd);
 			std::cout << "rozlaczono klienta" << std::endl;
@@ -131,7 +133,7 @@ std::string readMessage(threadData *data){
 	return msg;
 }
 
-void sendMessage(int fd,std::string msg)
+void sendMessage(int fd,const std::string &msg)
 {
 	int size=msg.size();
 	int sentBytes=0;
@@ -224,20 +226,26 @@ void *readingThread(void *t_data)
 		if(msg.substr(0,7)=="drawYes")
 		{
 			game.started=false;
+			pthread_mutex_lock(&game.players[0].queueMutex);
 			game.players[0].commands=std::queue<std::string>();
+			pthread_mutex_unlock(&game.players[0].queueMutex);
 			game.addMessage("end 1\n",data->fd,true);
 		}
 		if(msg.substr(0,6)=="resign")
 		{
 			game.started=false;
+			pthread_mutex_lock(&game.players[0].queueMutex);
 			game.players[0].commands=std::queue<std::string>();
+			pthread_mutex_unlock(&game.players[0].queueMutex);
 			int place1Score=game.places[0].playerId==data->playerId ? 0 : 2;
 			game.addMessage("end "+std::to_string(place1Score)+'\n',data->fd,true);
 		}
 		if(msg.substr(0,3)=="win")
 		{
 			game.started=false;
+			pthread_mutex_lock(&game.players[0].queueMutex);
 			game.players[0].commands=std::queue<std::string>();
+			pthread_mutex_unlock(&game.players[0].queueMutex);
 			int place1Score=game.places[0].playerId==data->playerId ? 2 : 0;
 			game.addMessage("end "+std::to_string(place1Score)+'\n',data->fd,true);
 		}

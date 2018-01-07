@@ -75,7 +75,7 @@ int King::moveLength(int pos,int depth)
     return length;
 }
 
-void King::addMove(std::vector<std::pair<int,int>> &v,int x,int y,int a,int b)
+void King::addMove(std::vector<std::pair<int, int> > &v, int x, int y, int a, int b)
 {
     int k=1;
     int l=10;

@@ -6,7 +6,7 @@
 class EmptyPiece : public Piece
 {
 public:
-    EmptyPiece(Color color);
+    explicit EmptyPiece(Color color);
     void addEdges(int x,int y) override;
     void eraseEdges(int,int) override{return;}
     void addMoves(std::vector<std::pair<int,int>>&,int,int) override{return;}

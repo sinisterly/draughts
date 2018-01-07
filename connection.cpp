@@ -2,7 +2,6 @@
 #include "ui_connection.h"
 #include <QMessageBox>
 #include <sstream>
-#include <cassert>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -32,7 +31,7 @@ Connection::~Connection()
     delete ui;
 }
 
-void Connection::sendMove(std::string msg)
+void Connection::sendMove(const std::string &msg)
 {
     sendMessage(msg);
 }
@@ -53,7 +52,6 @@ void Connection::sendMessage(std::string msg)
     {
         msg+=' ';
     }
-    assert(msg.size()==MSG_SIZE);
     int sentBytes=0;
     while(sentBytes<MSG_SIZE)
     {
@@ -61,7 +59,6 @@ void Connection::sendMessage(std::string msg)
         sentBytes+=cnt;
     }
     qInfo() << "wysylam: " << msg.c_str();
-    assert(sentBytes==MSG_SIZE);
 }
 
 void Connection::on_connectButton_clicked()

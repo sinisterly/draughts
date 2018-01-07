@@ -17,7 +17,7 @@ protected:
     static int vis[51];
 public:
     static Game *game;
-    Piece(Color color);
+    explicit Piece(Color color);
     Color getColor();
     virtual void addEdges(int x,int y)=0;
     virtual void eraseEdges(int x,int y)=0;

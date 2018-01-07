@@ -10,11 +10,6 @@ Color Game::getColor() const
     return color;
 }
 
-void Game::setColor(const Color &value)
-{
-    color = value;
-}
-
 Game::Game()
 {
     for(int i=0;i<10;i++)

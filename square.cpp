@@ -67,8 +67,5 @@ void Square::updatePiece()
         piece=qgraphicsitem_cast<Piece*>(childItems()[0]);
 }
 
-Square::Square()
-{
 
-}
 

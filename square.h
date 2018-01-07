@@ -14,7 +14,6 @@ private:
     QPointF position;
     Piece *piece;
 public:
-    Square();
     Square(int x,int y);
     int getIndex();
     Piece* getPiece();

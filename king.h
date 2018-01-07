@@ -10,7 +10,7 @@ private:
     void eraseEdge(int x,int y,int a,int b);
     void addMove(std::vector<std::pair<int,int>> &v,int x,int y,int a,int b);
 public:
-    King(Color color);
+    explicit King(Color color);
     void addEdges(int x,int y) override;
     void eraseEdges(int x,int y) override;
     void addMoves(std::vector<std::pair<int,int>> &v,int x,int y) override;
